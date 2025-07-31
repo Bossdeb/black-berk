@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>แอพจดบันทึกการเบิก</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Kanit', sans-serif;
+        }
+        
+        .app-container {
+            max-width: 480px;
+            margin: 0 auto;
+            background: white;
+            min-height: 100vh;
+            position: relative;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 0 0 20px 20px;
+        }
+        
+        .content {
+            padding: 20px;
+            padding-bottom: 100px;
+        }
+        
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 480px;
+            background: white;
+            border-top: 1px solid #eee;
+            padding: 10px 0;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .nav-item {
+            text-align: center;
+            padding: 8px;
+            color: #666;
+            text-decoration: none;
+            font-size: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .nav-item.active {
+            color: #667eea;
+        }
+        
+        .nav-item i {
+            font-size: 20px;
+            margin-bottom: 4px;
+        }
+        
+        .expense-card {
+            background: white;
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-left: 4px solid #667eea;
+        }
+        
+        .expense-form {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 25px;
+            padding: 12px 30px;
+        }
+        
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+        }
+        
+        .total-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .form-control {
+            border-radius: 10px;
+            border: 2px solid #eee;
+            padding: 12px 15px;
+        }
+        
+        .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+        
+        .receipt-preview {
+            max-width: 100%;
+            max-height: 200px;
+            border-radius: 10px;
+            margin-top: 10px;
+        }
+        
+        .file-upload {
+            border: 2px dashed #ddd;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .file-upload:hover {
+            border-color: #667eea;
+            background: #f8f9ff;
+        }
+        
+        .expense-type {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .expense-type.shopping {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+        
+        .expense-type.service {
+            background: #f3e5f5;
+            color: #7b1fa2;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #666;
+        }
+        
+        .empty-state i {
+            font-size: 60px;
+            color: #ddd;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="app-container">
+            <!-- Header -->
+            <div class="header">
+                <h4 class="mb-0">
+                    <i class="fas fa-receipt me-2"></i>
+                    แอพจดบันทึกการเบิก
+                </h4>
+                <p class="mb-0 mt-2">บันทึกค่าใช้จ่ายรายเดือน</p>
+            </div>
+
+            <!-- Content -->
+            <div class="content">
+                <!-- Total Summary -->
+                <div class="total-card">
+                    <h5 class="mb-2">ยอดรวมเดือนนี้</h5>
+                    <h2 class="mb-0">฿{{ formatNumber(totalAmount) }}</h2>
+                    <small>จำนวนรายการ: {{ expenses.length }} รายการ</small>
+                </div>
+
+                <!-- Add Expense Form -->
+                <div v-if="currentView === 'add'" class="expense-form">
+                    <h5 class="mb-3">
+                        <i class="fas fa-plus-circle me-2"></i>
+                        เพิ่มรายการค่าใช้จ่าย
+                    </h5>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">ประเภทค่าใช้จ่าย</label>
+                        <div class="d-flex gap-2">
+                            <button 
+                                @click="newExpense.type = 'shopping'" 
+                                :class="['btn', newExpense.type === 'shopping' ? 'btn-primary' : 'btn-outline-primary']"
+                                style="flex: 1; border-radius: 25px;">
+                                <i class="fas fa-shopping-cart me-1"></i>
+                                ซื้อของ
+                            </button>
+                            <button 
+                                @click="newExpense.type = 'service'" 
+                                :class="['btn', newExpense.type === 'service' ? 'btn-primary' : 'btn-outline-primary']"
+                                style="flex: 1; border-radius: 25px;">
+                                <i class="fas fa-cogs me-1"></i>
+                                ค่าบริการ
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">รายละเอียด</label>
+                        <input 
+                            v-model="newExpense.description" 
+                            type="text" 
+                            class="form-control" 
+                            placeholder="เช่น ซื้อเครื่องเขียน, ค่าซ่อมรถ">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">จำนวนเงิน (บาท)</label>
+                        <input 
+                            v-model="newExpense.amount" 
+                            type="number" 
+                            class="form-control" 
+                            placeholder="0">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">วันที่</label>
+                        <input 
+                            v-model="newExpense.date" 
+                            type="date" 
+                            class="form-control">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">แนบใบเสร็จ (ไม่บังคับ)</label>
+                        <div class="file-upload" @click="$refs.fileInput.click()">
+                            <i class="fas fa-cloud-upload-alt fa-2x mb-2"></i>
+                            <p class="mb-0">คลิกเพื่อเลือกไฟล์</p>
+                            <small class="text-muted">รองรับ JPG, PNG, PDF</small>
+                        </div>
+                        <input 
+                            ref="fileInput"
+                            type="file" 
+                            accept="image/*,.pdf" 
+                            @change="handleFileUpload" 
+                            style="display: none;">
+                        
+                        <img v-if="newExpense.receipt" :src="newExpense.receipt" class="receipt-preview">
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button @click="addExpense" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i>
+                            บันทึก
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Expense List -->
+                <div v-if="currentView === 'list'">
+                    <div v-if="expenses.length === 0" class="empty-state">
+                        <i class="fas fa-receipt"></i>
+                        <h5>ยังไม่มีรายการค่าใช้จ่าย</h5>
+                        <p>เริ่มต้นบันทึกค่าใช้จ่ายของคุณ</p>
+                    </div>
+                    
+                    <div v-else>
+                        <div v-for="(expense, index) in expenses" :key="index" class="expense-card">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="mb-1">{{ expense.description }}</h6>
+                                    <span :class="['expense-type', expense.type]">
+                                        <i :class="expense.type === 'shopping' ? 'fas fa-shopping-cart' : 'fas fa-cogs'"></i>
+                                        {{ expense.type === 'shopping' ? 'ซื้อของ' : 'ค่าบริการ' }}
+                                    </span>
+                                    <p class="text-muted mb-0 mt-1">
+                                        <i class="fas fa-calendar me-1"></i>
+                                        {{ formatDate(expense.date) }}
+                                    </p>
+                                </div>
+                                <div class="text-end">
+                                    <h5 class="text-primary mb-0">฿{{ formatNumber(expense.amount) }}</h5>
+                                    <button @click="deleteExpense(index)" class="btn btn-sm btn-outline-danger mt-1">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <img v-if="expense.receipt" :src="expense.receipt" class="receipt-preview mt-2">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Summary View -->
+                <div v-if="currentView === 'summary'">
+                    <div class="expense-form">
+                        <h5 class="mb-3">
+                            <i class="fas fa-chart-pie me-2"></i>
+                            สรุปค่าใช้จ่าย
+                        </h5>
+                        
+                        <div class="row">
+                            <div class="col-6">
+                                <div class="text-center p-3 bg-light rounded">
+                                    <h6 class="text-primary">ซื้อของ</h6>
+                                    <h4>฿{{ formatNumber(shoppingTotal) }}</h4>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="text-center p-3 bg-light rounded">
+                                    <h6 class="text-success">ค่าบริการ</h6>
+                                    <h4>฿{{ formatNumber(serviceTotal) }}</h4>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-3">
+                            <h6>รายการล่าสุด</h6>
+                            <div v-for="(expense, index) in recentExpenses" :key="index" class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                                <div>
+                                    <small class="text-muted">{{ formatDate(expense.date) }}</small>
+                                    <p class="mb-0">{{ expense.description }}</p>
+                                </div>
+                                <span class="text-primary">฿{{ formatNumber(expense.amount) }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bottom Navigation -->
+            <div class="bottom-nav">
+                <div class="row">
+                    <div class="col-4">
+                        <a @click="currentView = 'list'" :class="['nav-item', currentView === 'list' ? 'active' : '']">
+                            <i class="fas fa-list"></i>
+                            รายการ
+                        </a>
+                    </div>
+                    <div class="col-4">
+                        <a @click="currentView = 'add'" :class="['nav-item', currentView === 'add' ? 'active' : '']">
+                            <i class="fas fa-plus"></i>
+                            เพิ่ม
+                        </a>
+                    </div>
+                    <div class="col-4">
+                        <a @click="currentView = 'summary'" :class="['nav-item', currentView === 'summary' ? 'active' : '']">
+                            <i class="fas fa-chart-pie"></i>
+                            สรุป
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.3.4/dist/vue.global.prod.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="app.js"></script>
+</body>
+</html> 
