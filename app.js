@@ -19,30 +19,74 @@ createApp({
     data() {
         return {
             currentView: 'list',
+            selectedCategory: 'all',
             expenses: [],
             newExpense: {
-                type: 'shopping',
+                fundType: 'petty-cash',
+                category: '',
                 description: '',
                 amount: '',
                 date: new Date().toISOString().split('T')[0],
                 receipt: null
-            }
+            },
+            pettyCashQuota: 20000, // โควต้า Petty Cash 20,000 บาท
+            showReceiptModal: false,
+            selectedReceipt: null
         }
     },
     computed: {
+        // Petty Cash calculations
+        pettyCashExpenses() {
+            return this.expenses.filter(expense => expense.fundType === 'petty-cash');
+        },
+        pettyCashTotal() {
+            return this.pettyCashExpenses.reduce((total, expense) => total + parseFloat(expense.amount || 0), 0);
+        },
+        pettyCashUsed() {
+            return this.pettyCashTotal;
+        },
+        pettyCashRemaining() {
+            return Math.max(0, this.pettyCashQuota - this.pettyCashUsed);
+        },
+        pettyCashPercentage() {
+            return Math.round((this.pettyCashUsed / this.pettyCashQuota) * 100);
+        },
+        pettyCashProgress() {
+            const circumference = 2 * Math.PI * 52; // r = 52
+            const progress = (this.pettyCashUsed / this.pettyCashQuota) * circumference;
+            return `${progress} ${circumference}`;
+        },
+
+        // Fitness calculations
+        fitnessExpenses() {
+            return this.expenses.filter(expense => expense.fundType === 'fitness');
+        },
+        fitnessTotal() {
+            return this.fitnessExpenses.reduce((total, expense) => total + parseFloat(expense.amount || 0), 0);
+        },
+
+        // Cafe calculations
+        cafeExpenses() {
+            return this.expenses.filter(expense => expense.fundType === 'cafe');
+        },
+        cafeTotal() {
+            return this.cafeExpenses.reduce((total, expense) => total + parseFloat(expense.amount || 0), 0);
+        },
+
+        // Total calculations
         totalAmount() {
             return this.expenses.reduce((total, expense) => total + parseFloat(expense.amount || 0), 0);
         },
-        shoppingTotal() {
-            return this.expenses
-                .filter(expense => expense.type === 'shopping')
-                .reduce((total, expense) => total + parseFloat(expense.amount || 0), 0);
+
+        // Filtered expenses based on selected category
+        filteredExpenses() {
+            if (this.selectedCategory === 'all') {
+                return this.expenses;
+            }
+            return this.expenses.filter(expense => expense.fundType === this.selectedCategory);
         },
-        serviceTotal() {
-            return this.expenses
-                .filter(expense => expense.type === 'service')
-                .reduce((total, expense) => total + parseFloat(expense.amount || 0), 0);
-        },
+
+        // Recent expenses for summary
         recentExpenses() {
             return this.expenses
                 .sort((a, b) => new Date(b.date) - new Date(a.date))
@@ -70,8 +114,18 @@ createApp({
                 return;
             }
 
+            // Check Petty Cash quota
+            if (this.newExpense.fundType === 'petty-cash') {
+                const amount = parseFloat(this.newExpense.amount);
+                if (this.pettyCashRemaining < amount) {
+                    alert(`Petty Cash เหลือเพียง ฿${this.formatNumber(this.pettyCashRemaining)} ไม่สามารถเบิกได้`);
+                    return;
+                }
+            }
+
             const expense = {
-                type: this.newExpense.type,
+                fundType: this.newExpense.fundType,
+                category: this.newExpense.category,
                 description: this.newExpense.description,
                 amount: parseFloat(this.newExpense.amount),
                 date: this.newExpense.date,
@@ -124,9 +178,25 @@ createApp({
             }
         },
 
+        // Receipt modal functions
+        viewReceipt(receiptUrl) {
+            this.selectedReceipt = receiptUrl;
+            this.showReceiptModal = true;
+            // Prevent body scroll when modal is open
+            document.body.style.overflow = 'hidden';
+        },
+
+        closeReceiptModal() {
+            this.showReceiptModal = false;
+            this.selectedReceipt = null;
+            // Restore body scroll
+            document.body.style.overflow = 'auto';
+        },
+
         resetForm() {
             this.newExpense = {
-                type: 'shopping',
+                fundType: 'petty-cash',
+                category: '',
                 description: '',
                 amount: '',
                 date: new Date().toISOString().split('T')[0],
@@ -145,6 +215,57 @@ createApp({
                 month: 'short',
                 day: 'numeric'
             });
+        },
+
+        // Fund type helpers
+        getFundIcon(fundType) {
+            const icons = {
+                'petty-cash': 'fas fa-coins',
+                'fitness': 'fas fa-dumbbell',
+                'cafe': 'fas fa-coffee'
+            };
+            return icons[fundType] || 'fas fa-money-bill';
+        },
+
+        getFundLabel(fundType) {
+            const labels = {
+                'petty-cash': 'Petty Cash',
+                'fitness': 'Fitness',
+                'cafe': 'Cafe'
+            };
+            return labels[fundType] || fundType;
+        },
+
+        getCategoryLabel(category) {
+            const labels = {
+                'office': 'สำนักงาน',
+                'maintenance': 'ซ่อมบำรุง',
+                'supplies': 'วัสดุสิ้นเปลือง',
+                'equipment': 'อุปกรณ์',
+                'supplements': 'อาหารเสริม',
+                'training': 'คอร์สฝึก',
+                'ingredients': 'วัตถุดิบ',
+                'decoration': 'ตกแต่ง'
+            };
+            return labels[category] || category;
+        },
+
+        getAmountColor(fundType) {
+            const colors = {
+                'petty-cash': 'text-success',
+                'fitness': 'text-warning',
+                'cafe': 'text-info'
+            };
+            return colors[fundType] || 'text-primary';
+        },
+
+        getFundBadgeClass(fundType) {
+            const classes = {
+                'petty-cash': 'badge bg-success',
+                'fitness': 'badge bg-warning',
+                'cafe': 'badge bg-info'
+            };
+            return classes[fundType] || 'badge bg-secondary';
         },
 
         saveToLocalStorage() {

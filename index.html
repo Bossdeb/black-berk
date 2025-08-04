@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>แอพจดบันทึกการเบิก</title>
+    <title>BLACKFITESS</title>
+    </title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -58,6 +59,7 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
+            cursor: pointer;
         }
         
         .nav-item.active {
@@ -69,13 +71,28 @@
             margin-bottom: 4px;
         }
         
-        .expense-card {
+        .fund-card {
             background: white;
             border-radius: 15px;
-            padding: 15px;
+            padding: 20px;
             margin-bottom: 15px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             border-left: 4px solid #667eea;
+        }
+        
+        .petty-cash-card {
+            border-left-color: #28a745;
+            background: linear-gradient(135deg, #f8fff9 0%, #e8f5e8 100%);
+        }
+        
+        .fitness-card {
+            border-left-color: #ff6b35;
+            background: linear-gradient(135deg, #fff8f5 0%, #ffe8e0 100%);
+        }
+        
+        .cafe-card {
+            border-left-color: #6f42c1;
+            background: linear-gradient(135deg, #f8f5ff 0%, #e8e0ff 100%);
         }
         
         .expense-form {
@@ -95,6 +112,27 @@
         
         .btn-primary:hover {
             background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            border: none;
+            border-radius: 25px;
+            padding: 12px 30px;
+        }
+        
+        .btn-warning {
+            background: linear-gradient(135deg, #ff6b35 0%, #ff8c42 100%);
+            border: none;
+            border-radius: 25px;
+            padding: 12px 30px;
+        }
+        
+        .btn-info {
+            background: linear-gradient(135deg, #6f42c1 0%, #8b5cf6 100%);
+            border: none;
+            border-radius: 25px;
+            padding: 12px 30px;
         }
         
         .total-card {
@@ -122,6 +160,12 @@
             max-height: 200px;
             border-radius: 10px;
             margin-top: 10px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .receipt-preview:hover {
+            transform: scale(1.05);
         }
         
         .file-upload {
@@ -146,14 +190,19 @@
             font-weight: bold;
         }
         
-        .expense-type.shopping {
-            background: #e3f2fd;
-            color: #1976d2;
+        .expense-type.petty-cash {
+            background: #d4edda;
+            color: #155724;
         }
         
-        .expense-type.service {
-            background: #f3e5f5;
-            color: #7b1fa2;
+        .expense-type.fitness {
+            background: #ffe8d6;
+            color: #b45309;
+        }
+        
+        .expense-type.cafe {
+            background: #e8d6ff;
+            color: #6b21a8;
         }
         
         .empty-state {
@@ -167,27 +216,222 @@
             color: #ddd;
             margin-bottom: 20px;
         }
+        
+        /* Circular Progress for Petty Cash */
+        .progress-circle {
+            position: relative;
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 15px;
+        }
+        
+        .progress-circle svg {
+            width: 120px;
+            height: 120px;
+            transform: rotate(-90deg);
+        }
+        
+        .progress-circle circle {
+            fill: none;
+            stroke-width: 8;
+        }
+        
+        .progress-circle .bg {
+            stroke: #e9ecef;
+        }
+        
+        .progress-circle .progress {
+            stroke: #28a745;
+            stroke-linecap: round;
+            transition: stroke-dasharray 0.5s ease;
+        }
+        
+        .progress-circle .text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+        
+        .progress-circle .amount {
+            font-size: 18px;
+            font-weight: bold;
+            color: #28a745;
+        }
+        
+        .progress-circle .label {
+            font-size: 10px;
+            color: #666;
+        }
+        
+        .fund-summary {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .fund-summary-card {
+            background: white;
+            border-radius: 15px;
+            padding: 15px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .fund-summary-card.fitness {
+            border-left: 4px solid #ff6b35;
+        }
+        
+        .fund-summary-card.cafe {
+            border-left: 4px solid #6f42c1;
+        }
+        
+        .fund-summary-card h6 {
+            margin-bottom: 10px;
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .fund-summary-card .amount {
+            font-size: 20px;
+            font-weight: bold;
+        }
+        
+        .fund-summary-card.fitness .amount {
+            color: #ff6b35;
+        }
+        
+        .fund-summary-card.cafe .amount {
+            color: #6f42c1;
+        }
+        
+        .category-filter {
+            margin-bottom: 20px;
+        }
+        
+        .category-btn {
+            border-radius: 20px;
+            margin-right: 10px;
+            margin-bottom: 10px;
+            font-size: 12px;
+        }
+        
+        /* Receipt Modal */
+        .receipt-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            cursor: pointer;
+        }
+        
+        .receipt-modal img {
+            max-width: 90%;
+            max-height: 90%;
+            object-fit: contain;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
+        
+        .receipt-modal .close-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: white;
+            font-size: 30px;
+            cursor: pointer;
+            background: rgba(0,0,0,0.5);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
     </style>
 </head>
 <body>
     <div id="app">
         <div class="app-container">
             <!-- Header -->
-            <div class="header">
-                <h4 class="mb-0">
-                    <i class="fas fa-receipt me-2"></i>
-                    แอพจดบันทึกการเบิก
-                </h4>
-                <p class="mb-0 mt-2">บันทึกค่าใช้จ่ายรายเดือน</p>
-            </div>
+    
 
             <!-- Content -->
             <div class="content">
-                <!-- Total Summary -->
-                <div class="total-card">
-                    <h5 class="mb-2">ยอดรวมเดือนนี้</h5>
-                    <h2 class="mb-0">฿{{ formatNumber(totalAmount) }}</h2>
-                    <small>จำนวนรายการ: {{ expenses.length }} รายการ</small>
+                <!-- Petty Cash Progress -->
+                <div v-if="currentView === 'list'" class="fund-card petty-cash-card">
+                    <h5 class="mb-3">
+                        <i class="fas fa-coins me-2"></i>
+                        Petty Cash (เงินสำรองจ่าย)
+                    </h5>
+                    
+                    <div class="progress-circle">
+                        <svg>
+                            <circle class="bg" cx="60" cy="60" r="52"></circle>
+                            <circle class="progress" cx="60" cy="60" r="52" 
+                                    :stroke-dasharray="pettyCashProgress" 
+                                    :stroke-dashoffset="0"></circle>
+                        </svg>
+                        <div class="text">
+                            <div class="amount">฿{{ formatNumber(pettyCashRemaining) }}</div>
+                            <div class="label">เหลือจาก 20,000</div>
+                        </div>
+                    </div>
+                    
+                    <div class="text-center">
+                        <small class="text-muted">
+                            ใช้ไปแล้ว: ฿{{ formatNumber(pettyCashUsed) }} 
+                            ({{ pettyCashPercentage }}%)
+                        </small>
+                    </div>
+                </div>
+
+                <!-- Fund Summary -->
+                <div v-if="currentView === 'list'" class="fund-summary">
+                    <div class="fund-summary-card fitness">
+                        <h6>
+                            <i class="fas fa-dumbbell me-1"></i>
+                            Advance Fitness
+                        </h6>
+                        <div class="amount">฿{{ formatNumber(fitnessTotal) }}</div>
+                        <small class="text-muted">{{ fitnessExpenses.length }} รายการ</small>
+                    </div>
+                    <div class="fund-summary-card cafe">
+                        <h6>
+                            <i class="fas fa-coffee me-1"></i>
+                            Advance Cafe
+                        </h6>
+                        <div class="amount">฿{{ formatNumber(cafeTotal) }}</div>
+                        <small class="text-muted">{{ cafeExpenses.length }} รายการ</small>
+                    </div>
+                </div>
+
+                <!-- Category Filter -->
+                <div v-if="currentView === 'list' && expenses.length > 0" class="category-filter">
+                    <button @click="selectedCategory = 'all'" 
+                            :class="['btn btn-sm category-btn', selectedCategory === 'all' ? 'btn-primary' : 'btn-outline-primary']">
+                        ทั้งหมด
+                    </button>
+                    <button @click="selectedCategory = 'petty-cash'" 
+                            :class="['btn btn-sm category-btn', selectedCategory === 'petty-cash' ? 'btn-success' : 'btn-outline-success']">
+                        Petty Cash
+                    </button>
+                    <button @click="selectedCategory = 'fitness'" 
+                            :class="['btn btn-sm category-btn', selectedCategory === 'fitness' ? 'btn-warning' : 'btn-outline-warning']">
+                        Fitness
+                    </button>
+                    <button @click="selectedCategory = 'cafe'" 
+                            :class="['btn btn-sm category-btn', selectedCategory === 'cafe' ? 'btn-info' : 'btn-outline-info']">
+                        Cafe
+                    </button>
                 </div>
 
                 <!-- Add Expense Form -->
@@ -198,23 +442,48 @@
                     </h5>
                     
                     <div class="mb-3">
-                        <label class="form-label">ประเภทค่าใช้จ่าย</label>
-                        <div class="d-flex gap-2">
+                        <label class="form-label">ประเภทเงิน</label>
+                        <div class="d-flex gap-2 mb-2">
                             <button 
-                                @click="newExpense.type = 'shopping'" 
-                                :class="['btn', newExpense.type === 'shopping' ? 'btn-primary' : 'btn-outline-primary']"
+                                @click="newExpense.fundType = 'petty-cash'" 
+                                :class="['btn', newExpense.fundType === 'petty-cash' ? 'btn-success' : 'btn-outline-success']"
                                 style="flex: 1; border-radius: 25px;">
-                                <i class="fas fa-shopping-cart me-1"></i>
-                                ซื้อของ
-                            </button>
-                            <button 
-                                @click="newExpense.type = 'service'" 
-                                :class="['btn', newExpense.type === 'service' ? 'btn-primary' : 'btn-outline-primary']"
-                                style="flex: 1; border-radius: 25px;">
-                                <i class="fas fa-cogs me-1"></i>
-                                ค่าบริการ
+                                <i class="fas fa-coins me-1"></i>
+                                Petty Cash
                             </button>
                         </div>
+                        <div class="d-flex gap-2">
+                            <button 
+                                @click="newExpense.fundType = 'fitness'" 
+                                :class="['btn', newExpense.fundType === 'fitness' ? 'btn-warning' : 'btn-outline-warning']"
+                                style="flex: 1; border-radius: 25px;">
+                                <i class="fas fa-dumbbell me-1"></i>
+                                Fitness
+                            </button>
+                            <button 
+                                @click="newExpense.fundType = 'cafe'" 
+                                :class="['btn', newExpense.fundType === 'cafe' ? 'btn-info' : 'btn-outline-info']"
+                                style="flex: 1; border-radius: 25px;">
+                                <i class="fas fa-coffee me-1"></i>
+                                Cafe
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">หมวดหมู่</label>
+                        <select v-model="newExpense.category" class="form-control">
+                            <option value="">เลือกหมวดหมู่</option>
+                            <option v-if="newExpense.fundType === 'petty-cash'" value="office">สำนักงาน</option>
+                            <option v-if="newExpense.fundType === 'petty-cash'" value="maintenance">ซ่อมบำรุง</option>
+                            <option v-if="newExpense.fundType === 'petty-cash'" value="supplies">วัสดุสิ้นเปลือง</option>
+                            <option v-if="newExpense.fundType === 'fitness'" value="equipment">อุปกรณ์</option>
+                            <option v-if="newExpense.fundType === 'fitness'" value="supplements">อาหารเสริม</option>
+                            <option v-if="newExpense.fundType === 'fitness'" value="training">คอร์สฝึก</option>
+                            <option v-if="newExpense.fundType === 'cafe'" value="ingredients">วัตถุดิบ</option>
+                            <option v-if="newExpense.fundType === 'cafe'" value="equipment">อุปกรณ์</option>
+                            <option v-if="newExpense.fundType === 'cafe'" value="decoration">ตกแต่ง</option>
+                        </select>
                     </div>
 
                     <div class="mb-3">
@@ -257,7 +526,7 @@
                             @change="handleFileUpload" 
                             style="display: none;">
                         
-                        <img v-if="newExpense.receipt" :src="newExpense.receipt" class="receipt-preview">
+                        <img v-if="newExpense.receipt" :src="newExpense.receipt" class="receipt-preview" @click="viewReceipt(newExpense.receipt)">
                     </div>
 
                     <div class="d-grid gap-2">
@@ -270,20 +539,23 @@
 
                 <!-- Expense List -->
                 <div v-if="currentView === 'list'">
-                    <div v-if="expenses.length === 0" class="empty-state">
+                    <div v-if="filteredExpenses.length === 0" class="empty-state">
                         <i class="fas fa-receipt"></i>
                         <h5>ยังไม่มีรายการค่าใช้จ่าย</h5>
                         <p>เริ่มต้นบันทึกค่าใช้จ่ายของคุณ</p>
                     </div>
                     
                     <div v-else>
-                        <div v-for="(expense, index) in expenses" :key="index" class="expense-card">
+                        <div v-for="(expense, index) in filteredExpenses" :key="index" class="fund-card">
                             <div class="d-flex justify-content-between align-items-start">
                                 <div>
                                     <h6 class="mb-1">{{ expense.description }}</h6>
-                                    <span :class="['expense-type', expense.type]">
-                                        <i :class="expense.type === 'shopping' ? 'fas fa-shopping-cart' : 'fas fa-cogs'"></i>
-                                        {{ expense.type === 'shopping' ? 'ซื้อของ' : 'ค่าบริการ' }}
+                                    <span :class="['expense-type', expense.fundType]">
+                                        <i :class="getFundIcon(expense.fundType)"></i>
+                                        {{ getFundLabel(expense.fundType) }}
+                                    </span>
+                                    <span v-if="expense.category" class="badge bg-secondary ms-2">
+                                        {{ getCategoryLabel(expense.category) }}
                                     </span>
                                     <p class="text-muted mb-0 mt-1">
                                         <i class="fas fa-calendar me-1"></i>
@@ -291,13 +563,15 @@
                                     </p>
                                 </div>
                                 <div class="text-end">
-                                    <h5 class="text-primary mb-0">฿{{ formatNumber(expense.amount) }}</h5>
+                                    <h5 :class="getAmountColor(expense.fundType)" class="mb-0">
+                                        ฿{{ formatNumber(expense.amount) }}
+                                    </h5>
                                     <button @click="deleteExpense(index)" class="btn btn-sm btn-outline-danger mt-1">
                                         <i class="fas fa-trash"></i>
                                     </button>
                                 </div>
                             </div>
-                            <img v-if="expense.receipt" :src="expense.receipt" class="receipt-preview mt-2">
+                            <img v-if="expense.receipt" :src="expense.receipt" class="receipt-preview mt-2" @click="viewReceipt(expense.receipt)">
                         </div>
                     </div>
                 </div>
@@ -310,17 +584,26 @@
                             สรุปค่าใช้จ่าย
                         </h5>
                         
-                        <div class="row">
-                            <div class="col-6">
+                        <div class="row mb-3">
+                            <div class="col-4">
                                 <div class="text-center p-3 bg-light rounded">
-                                    <h6 class="text-primary">ซื้อของ</h6>
-                                    <h4>฿{{ formatNumber(shoppingTotal) }}</h4>
+                                    <h6 class="text-success">Petty Cash</h6>
+                                    <h4>฿{{ formatNumber(pettyCashTotal) }}</h4>
+                                    <small class="text-muted">{{ pettyCashExpenses.length }} รายการ</small>
                                 </div>
                             </div>
-                            <div class="col-6">
+                            <div class="col-4">
                                 <div class="text-center p-3 bg-light rounded">
-                                    <h6 class="text-success">ค่าบริการ</h6>
-                                    <h4>฿{{ formatNumber(serviceTotal) }}</h4>
+                                    <h6 class="text-warning">Fitness</h6>
+                                    <h4>฿{{ formatNumber(fitnessTotal) }}</h4>
+                                    <small class="text-muted">{{ fitnessExpenses.length }} รายการ</small>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="text-center p-3 bg-light rounded">
+                                    <h6 class="text-info">Cafe</h6>
+                                    <h4>฿{{ formatNumber(cafeTotal) }}</h4>
+                                    <small class="text-muted">{{ cafeExpenses.length }} รายการ</small>
                                 </div>
                             </div>
                         </div>
@@ -331,8 +614,11 @@
                                 <div>
                                     <small class="text-muted">{{ formatDate(expense.date) }}</small>
                                     <p class="mb-0">{{ expense.description }}</p>
+                                    <small :class="getFundBadgeClass(expense.fundType)">
+                                        {{ getFundLabel(expense.fundType) }}
+                                    </small>
                                 </div>
-                                <span class="text-primary">฿{{ formatNumber(expense.amount) }}</span>
+                                <span :class="getAmountColor(expense.fundType)">฿{{ formatNumber(expense.amount) }}</span>
                             </div>
                         </div>
                     </div>
@@ -362,6 +648,14 @@
                     </div>
                 </div>
             </div>
+        </div>
+
+        <!-- Receipt Modal -->
+        <div v-if="showReceiptModal" class="receipt-modal" @click="closeReceiptModal">
+            <div class="close-btn" @click="closeReceiptModal">
+                <i class="fas fa-times"></i>
+            </div>
+            <img :src="selectedReceipt" @click.stop>
         </div>
     </div>
 
