@@ -318,6 +318,124 @@
             font-size: 12px;
         }
         
+        /* Month Selector */
+        .month-selector {
+            background: white;
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        
+        .month-selector .current-month {
+            font-size: 18px;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        
+        .month-selector .month-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .month-selector .month-nav button {
+            background: none;
+            border: none;
+            font-size: 20px;
+            color: #667eea;
+            cursor: pointer;
+            padding: 5px 10px;
+            border-radius: 5px;
+            transition: all 0.3s;
+        }
+        
+        .month-selector .month-nav button:hover {
+            background: #f8f9ff;
+        }
+        
+        .month-selector .month-nav button:disabled {
+            color: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .month-selector .month-info {
+            font-size: 14px;
+            color: #666;
+            margin-top: 10px;
+        }
+        
+        /* Historical View */
+        .history-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .history-card .month-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .history-card .month-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .history-card .month-total {
+            font-size: 18px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .history-card .fund-breakdown {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .history-card .fund-item {
+            text-align: center;
+            padding: 10px;
+            border-radius: 10px;
+            background: #f8f9fa;
+        }
+        
+        .history-card .fund-item.petty-cash {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .history-card .fund-item.fitness {
+            background: #ffe8d6;
+            color: #b45309;
+        }
+        
+        .history-card .fund-item.cafe {
+            background: #e8d6ff;
+            color: #6b21a8;
+        }
+        
+        .history-card .fund-item .amount {
+            font-size: 16px;
+            font-weight: bold;
+        }
+        
+        .history-card .fund-item .label {
+            font-size: 10px;
+            opacity: 0.8;
+        }
+        
         /* Receipt Modal */
         .receipt-modal {
             position: fixed;
@@ -362,10 +480,35 @@
     <div id="app">
         <div class="app-container">
             <!-- Header -->
-    
+            <div class="header">
+                <h4 class="mb-0">
+                    <i class="fas fa-wallet me-2"></i>
+                    ระบบจัดการเงิน 3 ส่วน
+                </h4>
+                <p class="mb-0 mt-2">Petty Cash • Fitness • Cafe</p>
+            </div>
 
             <!-- Content -->
             <div class="content">
+                <!-- Month Selector -->
+                <div v-if="currentView === 'list'" class="month-selector">
+                    <div class="current-month">{{ currentMonthDisplay }}</div>
+                    <div class="month-nav">
+                        <button @click="previousMonth" :disabled="!canGoPrevious">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <button @click="goToCurrentMonth" class="btn btn-sm btn-outline-primary">
+                            เดือนปัจจุบัน
+                        </button>
+                        <button @click="nextMonth" :disabled="!canGoNext">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                    <div class="month-info">
+                        ข้อมูลเดือน {{ currentMonthDisplay }}
+                    </div>
+                </div>
+
                 <!-- Petty Cash Progress -->
                 <div v-if="currentView === 'list'" class="fund-card petty-cash-card">
                     <h5 class="mb-3">
@@ -415,7 +558,7 @@
                 </div>
 
                 <!-- Category Filter -->
-                <div v-if="currentView === 'list' && expenses.length > 0" class="category-filter">
+                <div v-if="currentView === 'list' && filteredExpenses.length > 0" class="category-filter">
                     <button @click="selectedCategory = 'all'" 
                             :class="['btn btn-sm category-btn', selectedCategory === 'all' ? 'btn-primary' : 'btn-outline-primary']">
                         ทั้งหมด
@@ -623,27 +766,77 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- History View -->
+                <div v-if="currentView === 'history'">
+                    <div class="expense-form">
+                        <h5 class="mb-3">
+                            <i class="fas fa-history me-2"></i>
+                            ประวัติย้อนหลัง
+                        </h5>
+                        
+                        <div v-if="monthlyHistory.length === 0" class="empty-state">
+                            <i class="fas fa-history"></i>
+                            <h5>ยังไม่มีข้อมูลประวัติ</h5>
+                            <p>เริ่มต้นบันทึกค่าใช้จ่ายเพื่อดูประวัติ</p>
+                        </div>
+                        
+                        <div v-else>
+                            <div v-for="(monthData, index) in monthlyHistory" :key="index" class="history-card">
+                                <div class="month-header">
+                                    <div class="month-title">{{ monthData.monthDisplay }}</div>
+                                    <div class="month-total">฿{{ formatNumber(monthData.total) }}</div>
+                                </div>
+                                
+                                <div class="fund-breakdown">
+                                    <div class="fund-item petty-cash">
+                                        <div class="amount">฿{{ formatNumber(monthData.pettyCash) }}</div>
+                                        <div class="label">Petty Cash</div>
+                                    </div>
+                                    <div class="fund-item fitness">
+                                        <div class="amount">฿{{ formatNumber(monthData.fitness) }}</div>
+                                        <div class="label">Fitness</div>
+                                    </div>
+                                    <div class="fund-item cafe">
+                                        <div class="amount">฿{{ formatNumber(monthData.cafe) }}</div>
+                                        <div class="label">Cafe</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="text-center">
+                                    <small class="text-muted">{{ monthData.count }} รายการ</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Bottom Navigation -->
             <div class="bottom-nav">
                 <div class="row">
-                    <div class="col-4">
+                    <div class="col-3">
                         <a @click="currentView = 'list'" :class="['nav-item', currentView === 'list' ? 'active' : '']">
                             <i class="fas fa-list"></i>
                             รายการ
                         </a>
                     </div>
-                    <div class="col-4">
+                    <div class="col-3">
                         <a @click="currentView = 'add'" :class="['nav-item', currentView === 'add' ? 'active' : '']">
                             <i class="fas fa-plus"></i>
                             เพิ่ม
                         </a>
                     </div>
-                    <div class="col-4">
+                    <div class="col-3">
                         <a @click="currentView = 'summary'" :class="['nav-item', currentView === 'summary' ? 'active' : '']">
                             <i class="fas fa-chart-pie"></i>
                             สรุป
+                        </a>
+                    </div>
+                    <div class="col-3">
+                        <a @click="currentView = 'history'" :class="['nav-item', currentView === 'history' ? 'active' : '']">
+                            <i class="fas fa-history"></i>
+                            ประวัติ
                         </a>
                     </div>
                 </div>

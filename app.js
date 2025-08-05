@@ -31,13 +31,49 @@ createApp({
             },
             pettyCashQuota: 20000, // โควต้า Petty Cash 20,000 บาท
             showReceiptModal: false,
-            selectedReceipt: null
+            selectedReceipt: null,
+            currentMonth: new Date().getFullYear() * 100 + new Date().getMonth() + 1, // YYYYMM format
+            allExpenses: [] // เก็บข้อมูลทั้งหมดสำหรับประวัติ
         }
     },
     computed: {
-        // Petty Cash calculations
+        // Current month display
+        currentMonthDisplay() {
+            const year = Math.floor(this.currentMonth / 100);
+            const month = this.currentMonth % 100;
+            const date = new Date(year, month - 1);
+            return date.toLocaleDateString('th-TH', {
+                year: 'numeric',
+                month: 'long'
+            });
+        },
+
+        // Navigation controls
+        canGoPrevious() {
+            const currentDate = new Date();
+            const currentYearMonth = currentDate.getFullYear() * 100 + currentDate.getMonth() + 1;
+            return this.currentMonth > currentYearMonth - 12; // จำกัดย้อนหลัง 12 เดือน
+        },
+
+        canGoNext() {
+            const currentDate = new Date();
+            const currentYearMonth = currentDate.getFullYear() * 100 + currentDate.getMonth() + 1;
+            return this.currentMonth < currentYearMonth;
+        },
+
+        // Filter expenses by current month
+        currentMonthExpenses() {
+            const year = Math.floor(this.currentMonth / 100);
+            const month = this.currentMonth % 100;
+            return this.allExpenses.filter(expense => {
+                const expenseDate = new Date(expense.date);
+                return expenseDate.getFullYear() === year && expenseDate.getMonth() === month - 1;
+            });
+        },
+
+        // Petty Cash calculations for current month
         pettyCashExpenses() {
-            return this.expenses.filter(expense => expense.fundType === 'petty-cash');
+            return this.currentMonthExpenses.filter(expense => expense.fundType === 'petty-cash');
         },
         pettyCashTotal() {
             return this.pettyCashExpenses.reduce((total, expense) => total + parseFloat(expense.amount || 0), 0);
@@ -57,47 +93,91 @@ createApp({
             return `${progress} ${circumference}`;
         },
 
-        // Fitness calculations
+        // Fitness calculations for current month
         fitnessExpenses() {
-            return this.expenses.filter(expense => expense.fundType === 'fitness');
+            return this.currentMonthExpenses.filter(expense => expense.fundType === 'fitness');
         },
         fitnessTotal() {
             return this.fitnessExpenses.reduce((total, expense) => total + parseFloat(expense.amount || 0), 0);
         },
 
-        // Cafe calculations
+        // Cafe calculations for current month
         cafeExpenses() {
-            return this.expenses.filter(expense => expense.fundType === 'cafe');
+            return this.currentMonthExpenses.filter(expense => expense.fundType === 'cafe');
         },
         cafeTotal() {
             return this.cafeExpenses.reduce((total, expense) => total + parseFloat(expense.amount || 0), 0);
         },
 
-        // Total calculations
+        // Total calculations for current month
         totalAmount() {
-            return this.expenses.reduce((total, expense) => total + parseFloat(expense.amount || 0), 0);
+            return this.currentMonthExpenses.reduce((total, expense) => total + parseFloat(expense.amount || 0), 0);
         },
 
-        // Filtered expenses based on selected category
+        // Filtered expenses based on selected category for current month
         filteredExpenses() {
             if (this.selectedCategory === 'all') {
-                return this.expenses;
+                return this.currentMonthExpenses;
             }
-            return this.expenses.filter(expense => expense.fundType === this.selectedCategory);
+            return this.currentMonthExpenses.filter(expense => expense.fundType === this.selectedCategory);
         },
 
-        // Recent expenses for summary
+        // Recent expenses for summary (current month)
         recentExpenses() {
-            return this.expenses
+            return this.currentMonthExpenses
                 .sort((a, b) => new Date(b.date) - new Date(a.date))
                 .slice(0, 5);
+        },
+
+        // Monthly history for historical view
+        monthlyHistory() {
+            const months = {};
+            
+            this.allExpenses.forEach(expense => {
+                const date = new Date(expense.date);
+                const yearMonth = date.getFullYear() * 100 + date.getMonth() + 1;
+                
+                if (!months[yearMonth]) {
+                    months[yearMonth] = {
+                        monthDisplay: date.toLocaleDateString('th-TH', {
+                            year: 'numeric',
+                            month: 'long'
+                        }),
+                        pettyCash: 0,
+                        fitness: 0,
+                        cafe: 0,
+                        total: 0,
+                        count: 0
+                    };
+                }
+                
+                const amount = parseFloat(expense.amount || 0);
+                months[yearMonth].total += amount;
+                months[yearMonth].count += 1;
+                
+                switch (expense.fundType) {
+                    case 'petty-cash':
+                        months[yearMonth].pettyCash += amount;
+                        break;
+                    case 'fitness':
+                        months[yearMonth].fitness += amount;
+                        break;
+                    case 'cafe':
+                        months[yearMonth].cafe += amount;
+                        break;
+                }
+            });
+            
+            return Object.keys(months)
+                .sort((a, b) => parseInt(b) - parseInt(a)) // เรียงจากใหม่ไปเก่า
+                .map(key => months[key]);
         }
     },
     methods: {
         async loadExpenses() {
             try {
                 const snapshot = await db.collection('expenses').orderBy('date', 'desc').get();
-                this.expenses = snapshot.docs.map(doc => ({
+                this.allExpenses = snapshot.docs.map(doc => ({
                     id: doc.id,
                     ...doc.data()
                 }));
@@ -135,7 +215,7 @@ createApp({
 
             try {
                 await db.collection('expenses').add(expense);
-                this.expenses.unshift(expense);
+                this.allExpenses.unshift(expense);
                 this.resetForm();
                 this.currentView = 'list';
                 this.saveToLocalStorage();
@@ -143,7 +223,7 @@ createApp({
                 console.error('Error adding expense:', error);
                 // Fallback to localStorage
                 expense.id = Date.now().toString();
-                this.expenses.unshift(expense);
+                this.allExpenses.unshift(expense);
                 this.resetForm();
                 this.currentView = 'list';
                 this.saveToLocalStorage();
@@ -151,17 +231,23 @@ createApp({
         },
 
         async deleteExpense(index) {
-            const expense = this.expenses[index];
+            const expense = this.currentMonthExpenses[index];
             if (confirm('คุณต้องการลบรายการนี้หรือไม่?')) {
                 try {
                     if (expense.id) {
                         await db.collection('expenses').doc(expense.id).delete();
                     }
-                    this.expenses.splice(index, 1);
+                    const allIndex = this.allExpenses.findIndex(e => e.id === expense.id);
+                    if (allIndex !== -1) {
+                        this.allExpenses.splice(allIndex, 1);
+                    }
                     this.saveToLocalStorage();
                 } catch (error) {
                     console.error('Error deleting expense:', error);
-                    this.expenses.splice(index, 1);
+                    const allIndex = this.allExpenses.findIndex(e => e.id === expense.id);
+                    if (allIndex !== -1) {
+                        this.allExpenses.splice(allIndex, 1);
+                    }
                     this.saveToLocalStorage();
                 }
             }
@@ -176,6 +262,36 @@ createApp({
                 };
                 reader.readAsDataURL(file);
             }
+        },
+
+        // Month navigation methods
+        previousMonth() {
+            if (this.canGoPrevious) {
+                const year = Math.floor(this.currentMonth / 100);
+                const month = this.currentMonth % 100;
+                if (month === 1) {
+                    this.currentMonth = (year - 1) * 100 + 12;
+                } else {
+                    this.currentMonth = year * 100 + (month - 1);
+                }
+            }
+        },
+
+        nextMonth() {
+            if (this.canGoNext) {
+                const year = Math.floor(this.currentMonth / 100);
+                const month = this.currentMonth % 100;
+                if (month === 12) {
+                    this.currentMonth = (year + 1) * 100 + 1;
+                } else {
+                    this.currentMonth = year * 100 + (month + 1);
+                }
+            }
+        },
+
+        goToCurrentMonth() {
+            const currentDate = new Date();
+            this.currentMonth = currentDate.getFullYear() * 100 + currentDate.getMonth() + 1;
         },
 
         // Receipt modal functions
@@ -269,13 +385,13 @@ createApp({
         },
 
         saveToLocalStorage() {
-            localStorage.setItem('expenses', JSON.stringify(this.expenses));
+            localStorage.setItem('expenses', JSON.stringify(this.allExpenses));
         },
 
         loadFromLocalStorage() {
             const saved = localStorage.getItem('expenses');
             if (saved) {
-                this.expenses = JSON.parse(saved);
+                this.allExpenses = JSON.parse(saved);
             }
         }
     },
